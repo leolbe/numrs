@@ -16,6 +16,18 @@ macro_rules! impl_from_std_array {
     };
     ($($n:ident),*) => {
         impl<T, $(const $n: usize),*> From<array_type!($($n,)*)> for Array<T> {
+            /// Converts an std array into a multidimensional array type.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use numrs::Array;
+            ///
+            /// let a = Array::from([[1, 2, 3], [4, 5, 6]]);
+            ///
+            /// println!("a_11 = {}", a[[1, 2]]);
+            /// // Prints: 5
+            /// ```
             fn from(value: array_type!($($n,)*)) -> Self {
                 Array {
                     elements: impl_from_std_array!(@ value, $($n,)*).collect(),
