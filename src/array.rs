@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 mod conversions;
+pub mod iter;
 
 /// A multidimensional array type with elements of type `T`.
 #[derive(Clone)]
