@@ -1,7 +1,11 @@
+use crate::array::iter::IndexIter;
+use std::mem::MaybeUninit;
 use std::ops::{Index, IndexMut};
+use crate::array::shape::Shape;
 
 pub mod conversions;
 pub mod iter;
+pub mod shape;
 
 /// A multidimensional array type with elements of type `T`.
 #[derive(Clone)]
@@ -27,6 +31,59 @@ impl<T> Array<T> {
     /// The total number of elements in the array.
     pub fn len(&self) -> usize {
         self.shape.iter().product()
+    }
+
+    /// Creates an array with a given shape where the elements are determined by their indices using
+    /// `f`.
+    pub fn from_fn<F: FnMut(Array<usize>) -> T>(shape: impl Shape, f: F) -> Array<T> {
+        let shape = shape.into();
+
+        let mut indices = IndexIter::new_inner(shape);
+        let elements: Box<[T]> = indices.by_ref().map(f).collect();
+
+        // move shape back out of iterator to avoid cloning
+        let shape = indices.into_shape();
+        Array::from_elements(elements, shape)
+    }
+
+    /// Creates an array with a given shape where the elements are given by calling `f`.
+    pub fn filled_with<F: FnMut() -> T>(shape: impl Shape, mut f: F) -> Array<T> {
+        let shape = shape.into();
+        let len = shape.iter().product();
+
+        let elements: Box<[T]> = (0..len).by_ref().map(|_| f()).collect();
+        Array::from_elements(elements, shape)
+    }
+
+    /// Creates an array with a shape like `other` and where the elements are given by calling `f`.
+    pub fn filled_with_like<U, F: FnMut() -> T>(other: &Array<U>, f: F) -> Array<T> {
+        Array::filled_with(other.shape.clone(), f)
+    }
+
+    /// Creates an array of uninitialized values with a given shape.
+    pub fn uninit(shape: impl Shape) -> Array<MaybeUninit<T>> {
+        Array::filled_with(shape, || MaybeUninit::uninit())
+    }
+
+    /// Creates an array of uninitialized values with a shape like `other`.
+    pub fn uninit_like<U>(other: &Array<U>) -> Array<MaybeUninit<T>> {
+        Array::uninit(other.shape.clone())
+    }
+
+    fn from_elements(elements: Box<[T]>, shape: Box<[usize]>) -> Array<T> {
+        Array { elements, shape }
+    }
+}
+
+impl<T: Clone> Array<T> {
+    /// Creates an array of a given shape filled with `value`.
+    pub fn filled(shape: impl Shape, value: &T) -> Array<T> {
+        Array::filled_with(shape, || value.clone())
+    }
+
+    /// Creates an array with a shape like `other` filled with `value`.
+    pub fn filled_like<U>(other: &Array<U>, value: &T) -> Array<T> {
+        Array::filled(other.shape.clone(), value)
     }
 }
 

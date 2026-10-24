@@ -1,5 +1,6 @@
 use crate::Array;
 use std::iter::FusedIterator;
+use crate::array::shape::Shape;
 
 impl<T> Array<T> {
     /// Creates an iterator that yields references to values in the array.
@@ -80,16 +81,16 @@ pub struct IndexIter {
 
 impl IndexIter {
     /// Creates an iterator that yields indices of the given shape.
-    pub fn new<S: Into<Box<[usize]>>>(shape: S) -> IndexIter {
+    pub fn new(shape: impl Shape) -> IndexIter {
         IndexIter::new_inner(shape.into())
     }
 
     /// Create an index iterator with the same shape as `array`.
-    pub fn new_like<T>(like: &Array<T>) -> IndexIter {
-        IndexIter::new_inner(like.shape.clone())
+    pub fn new_like<T>(other: &Array<T>) -> IndexIter {
+        IndexIter::new_inner(other.shape.clone())
     }
 
-    fn new_inner(shape: Box<[usize]>) -> IndexIter {
+    pub(super) fn new_inner(shape: Box<[usize]>) -> IndexIter {
         let rank = shape.len();
         let total_len = shape.iter().product();
         Self {
@@ -98,6 +99,10 @@ impl IndexIter {
             total_len,
             flat_index: 0,
         }
+    }
+
+    pub(super) fn into_shape(self) -> Box<[usize]> {
+        self.shape
     }
 
     fn advance_indices(&mut self, n: usize) {
