@@ -5,6 +5,8 @@ use std::ops::{Index, IndexMut};
 
 pub mod conversions;
 pub mod iter;
+#[cfg(feature = "num")]
+pub mod num;
 pub mod shape;
 
 /// A multidimensional array type with elements of type `T`.
