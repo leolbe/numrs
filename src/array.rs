@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-mod conversions;
+pub mod conversions;
 pub mod iter;
 
 /// A multidimensional array type with elements of type `T`.
@@ -29,46 +29,25 @@ impl<T> Array<T> {
         self.shape.iter().product()
     }
 
-    /// Returns the extent of the array's lowest dimension, unless the array is multidimensional.
+    /// Returns the length of the array if it has only one dimension not invariably with extent 1.
     ///
-    /// If the array is of shape (), i.e. is scalar, returns `Some(1)`
-    /// If the array is of shape (1, 1, ..., n), returns `Some(n)`
-    /// If any dimension is of extent 0, e.g. (1, 0, n), returns `Some(0)`
-    /// Otherwise, returns `None`
+    /// If this returns `Some(n)`, the array is in effect a flat list with length `n`.
+    ///
+    /// - If the array is of shape (), i.e. is scalar, returns `Some(1)`
+    /// - If the array is of shape (1, ..., n, ..., 1), returns `Some(n)`
+    /// - Otherwise, returns `None`
     pub fn get_1d_extent(&self) -> Option<usize> {
-        // for each index except the first
-        for x in self.shape.iter().skip(1) {
-            match x {
-                // if 0, then the whole len is 0 anyway
-                0 => return Some(0),
-                1 => {}
-                // if > 1, then the array is not 1D
+        let mut extent = 1;
+        for x in self.shape.iter() {
+            match (x, extent) {
+                (1, _) => {}
+                (x, 1) => {
+                    extent = *x;
+                }
                 _ => return None,
             }
         }
-        // return extent of lowest dimension, or `Some(1)` if array is scalar
-        self.shape.get(0).copied().or(Some(1))
-    }
-}
-
-impl<T> TryFrom<Array<T>> for Box<[T]> {
-    type Error = ();
-
-    /// Converts the array to a boxed slice, failing if the array is not 1D.
-    fn try_from(value: Array<T>) -> Result<Self, Self::Error> {
-        value.get_1d_extent().ok_or(())?;
-        Ok(value.elements)
-    }
-}
-
-impl<T> From<Box<[T]>> for Array<T> {
-    /// Converts a boxed slice to a 1D array.
-    fn from(value: Box<[T]>) -> Self {
-        let extent = value.len();
-        Self {
-            elements: value,
-            shape: vec![extent].into(),
-        }
+        Some(extent)
     }
 }
 
