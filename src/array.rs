@@ -1,7 +1,7 @@
 use crate::array::iter::IndexIter;
+use crate::array::shape::Shape;
 use std::mem::MaybeUninit;
 use std::ops::{Index, IndexMut};
-use crate::array::shape::Shape;
 
 pub mod conversions;
 pub mod iter;
@@ -35,10 +35,10 @@ impl<T> Array<T> {
 
     /// Creates an array with a given shape where the elements are determined by their indices using
     /// `f`.
-    pub fn from_fn<F: FnMut(Array<usize>) -> T>(shape: impl Shape, f: F) -> Array<T> {
+    pub fn from_fn<F: FnMut(Array<usize>) -> T>(shape: impl Into<Shape>, f: F) -> Array<T> {
         let shape = shape.into();
 
-        let mut indices = IndexIter::new_inner(shape);
+        let mut indices = IndexIter::new_inner(shape.extents);
         let elements: Box<[T]> = indices.by_ref().map(f).collect();
 
         // move shape back out of iterator to avoid cloning
@@ -47,12 +47,12 @@ impl<T> Array<T> {
     }
 
     /// Creates an array with a given shape where the elements are given by calling `f`.
-    pub fn filled_with<F: FnMut() -> T>(shape: impl Shape, mut f: F) -> Array<T> {
+    pub fn filled_with<F: FnMut() -> T>(shape: impl Into<Shape>, mut f: F) -> Array<T> {
         let shape = shape.into();
         let len = shape.iter().product();
 
         let elements: Box<[T]> = (0..len).by_ref().map(|_| f()).collect();
-        Array::from_elements(elements, shape)
+        Array::from_elements(elements, shape.extents)
     }
 
     /// Creates an array with a shape like `other` and where the elements are given by calling `f`.
@@ -61,7 +61,7 @@ impl<T> Array<T> {
     }
 
     /// Creates an array of uninitialized values with a given shape.
-    pub fn uninit(shape: impl Shape) -> Array<MaybeUninit<T>> {
+    pub fn uninit(shape: impl Into<Shape>) -> Array<MaybeUninit<T>> {
         Array::filled_with(shape, || MaybeUninit::uninit())
     }
 
@@ -77,7 +77,7 @@ impl<T> Array<T> {
 
 impl<T: Clone> Array<T> {
     /// Creates an array of a given shape filled with `value`.
-    pub fn filled(shape: impl Shape, value: &T) -> Array<T> {
+    pub fn filled(shape: impl Into<Shape>, value: &T) -> Array<T> {
         Array::filled_with(shape, || value.clone())
     }
 

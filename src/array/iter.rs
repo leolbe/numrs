@@ -81,8 +81,8 @@ pub struct IndexIter {
 
 impl IndexIter {
     /// Creates an iterator that yields indices of the given shape.
-    pub fn new(shape: impl Shape) -> IndexIter {
-        IndexIter::new_inner(shape.into())
+    pub fn new(shape: impl Into<Shape>) -> IndexIter {
+        IndexIter::new_inner(shape.into().extents)
     }
 
     /// Create an index iterator with the same shape as `array`.
