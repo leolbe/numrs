@@ -67,9 +67,8 @@ impl<'a, T> IntoIterator for &'a mut Array<T> {
     }
 }
 
-/// Iterator that yields multidimensional indices in accordance with a given array shape. Iterates
-/// indices by storage order, traversing dimensions from last to first. For 2D arrays, this is the
-/// same as row-major order.
+/// Iterator that yields multidimensional indices with a given array shape. Iterates indices by
+/// storage order. (See [`array`](crate::array))
 #[must_use]
 #[derive(Clone)]
 pub struct IndexIter {
@@ -81,22 +80,13 @@ pub struct IndexIter {
 
 impl IndexIter {
     /// Creates an iterator that yields indices of the given shape.
-    ///
-    /// # Arguments
-    ///
-    /// * `shape`: Must be a 1D array or an array where at most one dimension has an extent not
-    ///            equal to 1. See [`Array::get_1d_extent`]
-    ///
-    /// # Panics
-    ///
-    /// Panics if `shape` has an invalid shape.
-    pub fn new(shape: Array<usize>) -> IndexIter {
-        IndexIter::new_inner(Box::try_from(shape).expect("shape should be a 1D array"))
+    pub fn new<S: Into<Box<[usize]>>>(shape: S) -> IndexIter {
+        IndexIter::new_inner(shape.into())
     }
 
     /// Create an index iterator with the same shape as `array`.
-    pub fn new_like<T>(array: &Array<T>) -> IndexIter {
-        IndexIter::new_inner(array.shape.clone())
+    pub fn new_like<T>(like: &Array<T>) -> IndexIter {
+        IndexIter::new_inner(like.shape.clone())
     }
 
     fn new_inner(shape: Box<[usize]>) -> IndexIter {

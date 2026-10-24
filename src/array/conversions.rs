@@ -48,51 +48,11 @@ impl<T> From<T> for Array<T> {
     }
 }
 
-impl<T> TryFrom<Array<T>> for Box<[T]> {
-    type Error = ConvertError;
-
-    /// Converts a 1D array to a boxed slice.
-    ///
-    /// # Arguments
-    ///
-    /// * `value`: Must be either a scalar (0D array), a 1D array, or a higher rank array where the
-    ///            rest of the dimensions' extents are invariably 1.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use numrs::Array;
-    /// use std::assert_matches;
-    ///
-    /// // ok!
-    ///
-    /// // shape ()
-    /// assert_eq!(
-    ///     Box::<[i32]>::try_from(array![5_i32]),
-    ///     Ok(vec![5].into())
-    /// );
-    /// // shape (1, 3)
-    /// assert_eq!(
-    ///     Box::<[i32]>::try_from(array![4, 5, 6;]),
-    ///     Ok(vec![4, 5, 6].into())
-    /// );
-    /// // shape (3, 1)
-    /// assert_eq!(
-    ///     Box::<[i32]>::try_from(array![7; 8; 9]),
-    ///     Ok(vec![7, 8, 9].into())
-    /// );
-    ///
-    /// // error!
-    ///
-    /// // shape (2, 2)
-    /// assert_matches!(
-    ///     Box::<[i32]>::try_from(array![1, 2; 3, 4]),
-    ///     Err(_)
-    /// );
-    /// ```
-    fn try_from(value: Array<T>) -> Result<Self, Self::Error> {
-        value.get_1d_extent().ok_or(ConvertError)?;
-        Ok(value.elements)
+impl<T> From<Array<T>> for Box<[T]> {
+    /// Flattens an array into a 1D boxed slice, ordering the elements by storage order.
+    /// (See [`array`](crate::array))
+    fn from(value: Array<T>) -> Self {
+        value.elements
     }
 }
 
@@ -150,44 +110,3 @@ impl_from_std_array!(N1, N2, N3);
 impl_from_std_array!(N1, N2, N3, N4);
 impl_from_std_array!(N1, N2, N3, N4, N5);
 impl_from_std_array!(N1, N2, N3, N4, N5, N6);
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn into_boxed() {
-        assert_eq!(Box::<[i32]>::try_from(Array::from(5)), Ok(vec![5].into()));
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[i32; 0]>>::from([])),
-            Ok(vec![].into())
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[[i32; 0]; 1]>>::from([[]])),
-            Ok(vec![].into())
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(Array::from([1, 2, 3])),
-            Ok(vec![1, 2, 3].into())
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[[i32; 3]; 1]>>::from([[4, 5, 6]])),
-            Ok(vec![4, 5, 6].into())
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[[i32; 1]; 3]>>::from([[7], [8], [9]])),
-            Ok(vec![7, 8, 9].into())
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[[i32; 0]; 2]>>::from([[], []])),
-            Err(ConvertError)
-        );
-        assert_eq!(
-            Box::<[i32]>::try_from(<Array::<i32> as From<[[i32; 2]; 2]>>::from([
-                [1, 2],
-                [3, 4]
-            ])),
-            Err(ConvertError)
-        );
-    }
-}

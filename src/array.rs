@@ -28,27 +28,6 @@ impl<T> Array<T> {
     pub fn len(&self) -> usize {
         self.shape.iter().product()
     }
-
-    /// Returns the length of the array if it has only one dimension not invariably with extent 1.
-    ///
-    /// If this returns `Some(n)`, the array is in effect a flat list with length `n`.
-    ///
-    /// - If the array is of shape (), i.e. is scalar, returns `Some(1)`
-    /// - If the array is of shape (1, ..., n, ..., 1), returns `Some(n)`
-    /// - Otherwise, returns `None`
-    pub fn get_1d_extent(&self) -> Option<usize> {
-        let mut extent = 1;
-        for x in self.shape.iter() {
-            match (x, extent) {
-                (1, _) => {}
-                (x, 1) => {
-                    extent = *x;
-                }
-                _ => return None,
-            }
-        }
-        Some(extent)
-    }
 }
 
 impl<T> Index<usize> for Array<T> {
