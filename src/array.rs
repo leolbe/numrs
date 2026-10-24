@@ -13,7 +13,7 @@ pub mod shape;
 #[derive(Clone)]
 pub struct Array<T> {
     elements: Box<[T]>,
-    shape: Box<[usize]>,
+    shape: Shape,
 }
 
 impl<T> Array<T> {
@@ -24,15 +24,12 @@ impl<T> Array<T> {
 
     /// The shape of the array, which determines the extent of each dimension.
     pub fn shape(&self) -> Array<usize> {
-        Array {
-            elements: self.shape.iter().rev().copied().collect(),
-            shape: vec![self.rank()].into(),
-        }
+        self.shape.extents.clone().into()
     }
 
     /// The total number of elements in the array.
     pub fn len(&self) -> usize {
-        self.shape.iter().product()
+        self.elements.len()
     }
 
     /// Creates an array with a given shape where the elements are determined by their indices using
@@ -40,7 +37,7 @@ impl<T> Array<T> {
     pub fn from_fn<F: FnMut(Array<usize>) -> T>(shape: impl Into<Shape>, f: F) -> Array<T> {
         let shape = shape.into();
 
-        let mut indices = IndexIter::new_inner(shape.extents);
+        let mut indices = IndexIter::new_inner(shape);
         let elements: Box<[T]> = indices.by_ref().map(f).collect();
 
         // move shape back out of iterator to avoid cloning
@@ -72,13 +69,16 @@ impl<T> Array<T> {
         Array::uninit(other.shape.clone())
     }
 
-    fn from_elements(elements: Box<[T]>, shape: Box<[usize]>) -> Array<T> {
-        Array { elements, shape }
+    fn from_elements(elements: Box<[T]>, shape: impl Into<Shape>) -> Array<T> {
+        Array {
+            elements,
+            shape: shape.into(),
+        }
     }
 }
 
 impl<T: Clone> Array<T> {
-    /// Creates an array of a given shape filled with `value`.
+    /// Creates an array with a given shape filled with `value`.
     pub fn filled(shape: impl Into<Shape>, value: &T) -> Array<T> {
         Array::filled_with(shape, || value.clone())
     }

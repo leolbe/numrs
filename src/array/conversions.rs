@@ -31,20 +31,14 @@ impl<T> Array<MaybeUninit<T>> {
     /// See [`MaybeUninit`].
     pub unsafe fn assume_init(self) -> Array<T> {
         let elements = unsafe { self.elements.assume_init() };
-        Array {
-            elements,
-            shape: self.shape,
-        }
+        Array::from_elements(elements, self.shape)
     }
 }
 
 impl<T> From<T> for Array<T> {
     /// Converts `value` to a scalar (0D) array.
     fn from(value: T) -> Self {
-        Self {
-            elements: vec![value].into(),
-            shape: vec![].into(),
-        }
+        Array::from_elements(vec![value].into(), [])
     }
 }
 
@@ -59,11 +53,15 @@ impl<T> From<Array<T>> for Box<[T]> {
 impl<T> From<Box<[T]>> for Array<T> {
     /// Converts a boxed slice to a 1D array.
     fn from(value: Box<[T]>) -> Self {
-        let extent = value.len();
-        Self {
-            elements: value,
-            shape: vec![extent].into(),
-        }
+        let len = value.len();
+        Array::from_elements(value, len)
+    }
+}
+
+impl<T> FromIterator<T> for Array<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let elements: Box<[T]> = FromIterator::from_iter(iter);
+        elements.into()
     }
 }
 
@@ -95,10 +93,8 @@ macro_rules! impl_from_std_array {
             /// assert_eq!(6, a[[1, 2]]);
             /// ```
             fn from(value: array_type!($($n,)*)) -> Self {
-                Array {
-                    elements: impl_from_std_array!(@ value, $($n,)*).collect(),
-                    shape: [$($n,)*].into(),
-                }
+                let elements: Box<[T]> = impl_from_std_array!(@ value, $($n,)*).collect();
+                Array::from_elements(elements, [$($n,)*])
             }
         }
     };

@@ -1,19 +1,21 @@
 use crate::Array;
 use std::{slice, vec};
+use std::ops::{Index, IndexMut};
 
 /// Represents the shape of an array, determining its rank and the extent of each dimension.
+#[derive(Clone, Debug)]
 pub struct Shape {
     pub(super) extents: Box<[usize]>,
 }
 
 impl Shape {
     /// Creates an iterator that yields references to each dimension's extent.
-    pub fn iter(&self) -> impl Iterator<Item = &usize> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &usize> {
         self.into_iter()
     }
 
     /// Creates an iterator that yields mutable references to each dimension's extent.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut usize> {
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut usize> {
         self.into_iter()
     }
 
@@ -53,6 +55,10 @@ impl Shape {
     /// ```
     pub fn max_extent(&self) -> Option<usize> {
         self.iter().max().copied()
+    }
+
+    pub(super) fn into_extents(self) -> Box<[usize]> {
+        self.extents
     }
 
     /// The stride between the index of each diagonal element, i.e. the difference of their flat
@@ -100,6 +106,20 @@ impl<'a> IntoIterator for &'a mut Shape {
 
     fn into_iter(self) -> Self::IntoIter {
         self.extents.iter_mut()
+    }
+}
+
+impl Index<usize> for Shape {
+    type Output = usize;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.extents[index]
+    }
+}
+
+impl IndexMut<usize> for Shape {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.extents[index]
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::Array;
-use std::iter::FusedIterator;
 use crate::array::shape::Shape;
+use std::iter::FusedIterator;
 
 impl<T> Array<T> {
     /// Creates an iterator that yields references to values in the array.
@@ -73,7 +73,7 @@ impl<'a, T> IntoIterator for &'a mut Array<T> {
 #[must_use]
 #[derive(Clone)]
 pub struct IndexIter {
-    shape: Box<[usize]>,
+    shape: Shape,
     indices: Box<[usize]>,
     total_len: usize,
     flat_index: usize,
@@ -82,7 +82,7 @@ pub struct IndexIter {
 impl IndexIter {
     /// Creates an iterator that yields indices of the given shape.
     pub fn new(shape: impl Into<Shape>) -> IndexIter {
-        IndexIter::new_inner(shape.into().extents)
+        IndexIter::new_inner(shape.into())
     }
 
     /// Create an index iterator with the same shape as `array`.
@@ -90,7 +90,7 @@ impl IndexIter {
         IndexIter::new_inner(other.shape.clone())
     }
 
-    pub(super) fn new_inner(shape: Box<[usize]>) -> IndexIter {
+    pub(super) fn new_inner(shape: Shape) -> IndexIter {
         let rank = shape.len();
         let total_len = shape.iter().product();
         Self {
@@ -101,7 +101,7 @@ impl IndexIter {
         }
     }
 
-    pub(super) fn into_shape(self) -> Box<[usize]> {
+    pub(super) fn into_shape(self) -> Shape {
         self.shape
     }
 
@@ -152,7 +152,7 @@ impl Iterator for IndexIter {
             let mut last_indices = self.shape;
             // the if condition guarantees that there is no integer underflow here
             last_indices.iter_mut().for_each(|x| *x -= 1);
-            Some(last_indices.into())
+            Some(last_indices.into_extents().into())
         }
     }
 
