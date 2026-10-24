@@ -15,24 +15,24 @@ impl<T> Array<T> {
     /// Creates a consuming iterator that yields elements in the array together with their
     /// corresponding multidimensional indices.
     ///
-    /// This is somewhat the multidimensional counterpart to [`std::iter::Enumerate`].
-    pub fn into_indexed_iter(self) -> impl Iterator<Item = (Array<usize>, T)> {
+    /// This is a multidimensional analogue of [`std::iter::Enumerate`].
+    pub fn into_enumerate(self) -> impl Iterator<Item = (Array<usize>, T)> {
         IndexIter::new_inner(self.shape).zip(self.elements.into_iter())
     }
 
     /// Creates an iterator that yields references to elements in the array together with their
     /// corresponding multidimensional indices.
     ///
-    /// This is somewhat the multidimensional counterpart to [`std::iter::Enumerate`].
-    pub fn indexed_iter(&self) -> impl Iterator<Item = (Array<usize>, &T)> {
+    /// This is a multidimensional analogue of [`std::iter::Enumerate`].
+    pub fn enumerate(&self) -> impl Iterator<Item = (Array<usize>, &T)> {
         IndexIter::new_like(self).zip(self.elements.iter())
     }
 
     /// Creates an iterator that yields mutable references to elements in the array together with
     /// their corresponding multidimensional indices.
     ///
-    /// This is somewhat the multidimensional counterpart to [`std::iter::Enumerate`].
-    pub fn indexed_iter_mut(&mut self) -> impl Iterator<Item = (Array<usize>, &mut T)> {
+    /// This is a multidimensional analogue of [`std::iter::Enumerate`].
+    pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (Array<usize>, &mut T)> {
         IndexIter::new_like(self).zip(self.elements.iter_mut())
     }
 }
